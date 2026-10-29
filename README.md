@@ -16,6 +16,10 @@ Browse Jenkins® jobs, builds, pipeline stages and console logs from the VS Code
 - **Console logs** open in an editor tab, scrolled to the end. Use the refresh button in the editor title to reload a running build's log.
 - **Actions** on jobs and builds: Build Now, Abort Build, Open in Browser.
 
+## Installation
+
+Install from the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=nihatcanco.pipeline-viewer-for-jenkins), or search for **Pipeline Viewer for Jenkins** in the VS Code Extensions view.
+
 ## Getting started
 
 1. Create an API token in Jenkins: click your user name → **Security** → **API Token** → **Add new Token**.
