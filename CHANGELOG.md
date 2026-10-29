@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Build Now on a parameterized job lets you review and change its parameters before the build starts.
+
 ## 0.1.0
 
 First public release.

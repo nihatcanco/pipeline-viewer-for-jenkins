@@ -60,6 +60,24 @@ test('item URLs cannot add query parameters to an action', async () => {
   assert.equal(calls[0].init.method, 'POST');
 });
 
+test('parameters are read from the job properties, or from its actions on older Jenkins', async () => {
+  const param = { name: 'ENV', type: 'ChoiceParameterDefinition', choices: ['dev', 'prod'] };
+  stubFetch(200, JSON.stringify({ property: [{}, { parameterDefinitions: [param] }] }));
+  assert.deepEqual(await new JenkinsClient(BASE, '', '').getParameters(`${BASE}job/a/`), [param]);
+  stubFetch(200, JSON.stringify({ property: [], actions: [null, { parameterDefinitions: [param] }] }));
+  assert.deepEqual(await new JenkinsClient(BASE, '', '').getParameters(`${BASE}job/a/`), [param]);
+  stubFetch(200, JSON.stringify({ property: [{}], actions: [{}] }));
+  assert.deepEqual(await new JenkinsClient(BASE, '', '').getParameters(`${BASE}job/a/`), []);
+});
+
+test('parameter values are sent in the request body, not the URL', async () => {
+  const calls = stubFetch(201);
+  await new JenkinsClient(BASE, '', '').triggerBuildWithParameters(`${BASE}job/a/`, { ENV: 'prod', TAG: 'a&b=c' });
+  assert.equal(calls[0].url, 'https://ci.example.com/jenkins/job/a/buildWithParameters?delay=0sec');
+  assert.equal(calls[0].init.method, 'POST');
+  assert.equal(String(calls[0].init.body), 'ENV=prod&TAG=a%26b%3Dc');
+});
+
 test('a redirect on a read is reported instead of parsed', async () => {
   stubFetch(302, '', { location: 'https://sso.example.com/login' });
   await assert.rejects(new JenkinsClient(BASE, '', '').getJobs(), (err: JenkinsError) => {

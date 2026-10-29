@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { JenkinsClient, JenkinsJob, displayName, isFolder } from './jenkinsClient';
 import { JobsProvider, Node, errorMessage } from './jobsProvider';
 import { LOG_SCHEME, LogProvider } from './logProvider';
+import { needsBrowser, promptForParameters } from './parameters';
 import { SECTION, numberSetting, settings } from './settings';
 import { Status, statusFromColor, statusFromResult, statusLabel } from './status';
 
@@ -329,7 +330,26 @@ export function activate(context: vscode.ExtensionContext): void {
         return;
       }
       try {
-        await client.triggerBuild(node.job.url);
+        const params = await client.getParameters(node.job.url);
+        if (needsBrowser(params)) {
+          const choice = await vscode.window.showWarningMessage(
+            `${displayName(node.job)} takes a file parameter, which can only be supplied from the Jenkins web page.`,
+            'Open in Browser',
+          );
+          if (choice) {
+            await vscode.env.openExternal(vscode.Uri.parse(client.resolve(`${node.job.url}build`)));
+          }
+          return;
+        }
+        if (params.length) {
+          const values = await promptForParameters(`Build ${displayName(node.job)}`, params);
+          if (!values) {
+            return;
+          }
+          await client.triggerBuildWithParameters(node.job.url, values);
+        } else {
+          await client.triggerBuild(node.job.url);
+        }
         void vscode.window.showInformationMessage(`Build scheduled: ${displayName(node.job)}`);
         // Give Jenkins a moment to move the build out of the queue before refreshing.
         setTimeout(() => void controller.refresh(), 3000);

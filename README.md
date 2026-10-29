@@ -63,7 +63,8 @@ The certificate must be issued for the host name in your Jenkins URL. With remot
 ## Known limitations
 
 - Console logs are loaded in full, so very large logs can take a while to open.
-- Parameterized jobs are started with their default parameter values.
+- Jobs with a file parameter must be started from the Jenkins web page.
+- Text parameters are edited in a single-line input box.
 
 ## Development
 

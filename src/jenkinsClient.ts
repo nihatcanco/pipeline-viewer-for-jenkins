@@ -28,6 +28,16 @@ export interface JenkinsStage {
   durationMillis: number;
 }
 
+export interface JenkinsParameter {
+  name: string;
+  /** Class name of the definition, such as StringParameterDefinition. */
+  type?: string;
+  description?: string | null;
+  defaultParameterValue?: { value?: unknown } | null;
+  /** Present on choice parameters. */
+  choices?: string[];
+}
+
 export class JenkinsError extends Error {
   constructor(message: string, readonly status?: number) {
     super(message);
@@ -38,6 +48,7 @@ const JOB_FIELDS = 'name,displayName,url,color,_class,lastCompletedBuild[number,
 // Three levels covers root → folder/multibranch → branch; deeper folders are fetched when expanded.
 const JOBS_TREE = `jobs[${JOB_FIELDS},jobs[${JOB_FIELDS},jobs[${JOB_FIELDS}]]]`;
 const BUILD_FIELDS = 'number,url,result,building,timestamp,duration,estimatedDuration';
+const PARAMETER_FIELDS = 'parameterDefinitions[name,type,description,defaultParameterValue[value],choices]';
 
 export function displayName(job: JenkinsJob): string {
   return job.displayName ?? decodeName(job.name);
@@ -159,6 +170,30 @@ export class JenkinsClient {
   async getConsoleText(buildUrl: string): Promise<string> {
     const res = await this.request(this.endpoint(buildUrl, 'consoleText'));
     return res.text();
+  }
+
+  /** Build parameters the job declares; empty when it has none. */
+  async getParameters(jobUrl: string): Promise<JenkinsParameter[]> {
+    type Holder = { parameterDefinitions?: JenkinsParameter[] } | null;
+    const data = await this.json<{ property?: Holder[]; actions?: Holder[] }>(
+      this.endpoint(jobUrl, `api/json?tree=property[${PARAMETER_FIELDS}],actions[${PARAMETER_FIELDS}]`),
+    );
+    // Current Jenkins lists them under the job's properties, older versions under its actions.
+    for (const holder of [...(data.property ?? []), ...(data.actions ?? [])]) {
+      if (holder?.parameterDefinitions?.length) {
+        return holder.parameterDefinitions;
+      }
+    }
+    return [];
+  }
+
+  /** Parameters left out of `values` take the job's default values. */
+  async triggerBuildWithParameters(jobUrl: string, values: Record<string, string>): Promise<void> {
+    // Values travel in the form body rather than the URL, so they stay out of proxy and access logs.
+    await this.request(this.endpoint(jobUrl, 'buildWithParameters?delay=0sec'), {
+      method: 'POST',
+      body: new URLSearchParams(values),
+    });
   }
 
   async triggerBuild(jobUrl: string): Promise<void> {
