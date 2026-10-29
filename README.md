@@ -75,6 +75,8 @@ npm test           # unit tests for the Jenkins client
 npm run package    # builds a .vsix
 ```
 
+Note user-facing changes under `## Unreleased` in [CHANGELOG.md](CHANGELOG.md). Releases are made by running the **Publish** workflow on GitHub, which picks the next version, renames that section to it, and publishes to the Visual Studio Marketplace and Open VSX.
+
 Issues and pull requests are welcome. For larger changes, please open an issue first to discuss the idea.
 
 ## License

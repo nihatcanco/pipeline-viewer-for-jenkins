@@ -1,0 +1,72 @@
+name: Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Version bump. "current" releases the version already in package.json.
+        type: choice
+        options: [patch, minor, major, current]
+        default: patch
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    # The tokens live in this environment, so it can require an approval before anything is published.
+    environment: marketplace
+    steps:
+      # Actions are pinned to commit SHAs so a moved tag cannot change what runs here.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - name: Bump the version and date the changelog
+        env:
+          BUMP: ${{ inputs.bump }}
+        run: |
+          if [ "$BUMP" != current ]; then
+            if ! grep -q '^## Unreleased$' CHANGELOG.md; then
+              echo "CHANGELOG.md has no '## Unreleased' section to release." >&2
+              exit 1
+            fi
+            npm version "$BUMP" --no-git-tag-version
+          fi
+          version="$(node -p "require('./package.json').version")"
+          sed -i "s/^## Unreleased$/## $version/" CHANGELOG.md
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+      # No dependency needs an install script to compile, test or package.
+      - run: npm ci --ignore-scripts
+      - run: npm test
+      - run: npx vsce package -o extension.vsix
+      # The token is only handed to git here, after the dependencies and tests have run.
+      - name: Commit and tag the release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if ! git diff --quiet; then
+            git commit -am "Release $VERSION"
+          fi
+          git tag "v$VERSION"
+          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main "v$VERSION"
+      - name: Publish to the Visual Studio Marketplace
+        run: npx vsce publish --packagePath extension.vsix
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+      - name: Publish to Open VSX
+        run: |
+          if [ -z "$OVSX_PAT" ]; then
+            echo "OVSX_PAT is not set; skipping Open VSX."
+            exit 0
+          fi
+          npx ovsx publish extension.vsix -p "$OVSX_PAT"
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
