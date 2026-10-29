@@ -1,0 +1,263 @@
+{
+  "name": "pipeline-viewer-for-jenkins",
+  "displayName": "Pipeline Viewer for Jenkins",
+  "description": "Browse Jenkins jobs, builds, pipeline stages and console logs from the VS Code sidebar.",
+  "version": "0.1.0",
+  "publisher": "nihatcancolpan",
+  "author": "Nihatcan Colpan",
+  "license": "MIT",
+  "icon": "media/icon.png",
+  "galleryBanner": {
+    "color": "#F4F4F4",
+    "theme": "light"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nihatcanco/pipeline-viewer-for-jenkins.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nihatcanco/pipeline-viewer-for-jenkins/issues"
+  },
+  "homepage": "https://github.com/nihatcanco/pipeline-viewer-for-jenkins#readme",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "jenkins",
+    "ci",
+    "cd",
+    "pipeline",
+    "build",
+    "devops"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": true
+    },
+    "virtualWorkspaces": true
+  },
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "pipelineViewerForJenkins",
+          "title": "Jenkins",
+          "icon": "media/activity-bar.svg"
+        }
+      ]
+    },
+    "views": {
+      "pipelineViewerForJenkins": [
+        {
+          "id": "pipelineViewerForJenkins.jobs",
+          "name": "Pipelines"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "pipelineViewerForJenkins.jobs",
+        "contents": "Connect to a Jenkins server to see your pipelines.\n[Configure Jenkins](command:pipelineViewerForJenkins.configure)",
+        "when": "!pipelineViewerForJenkins.configured"
+      },
+      {
+        "view": "pipelineViewerForJenkins.jobs",
+        "contents": "No jobs found on this Jenkins server.\n[Refresh](command:pipelineViewerForJenkins.refresh)",
+        "when": "pipelineViewerForJenkins.configured"
+      }
+    ],
+    "commands": [
+      {
+        "command": "pipelineViewerForJenkins.configure",
+        "title": "Configure Connection",
+        "category": "Jenkins",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "pipelineViewerForJenkins.refresh",
+        "title": "Refresh",
+        "category": "Jenkins",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "pipelineViewerForJenkins.build",
+        "title": "Build Now",
+        "category": "Jenkins",
+        "icon": "$(play)"
+      },
+      {
+        "command": "pipelineViewerForJenkins.stopBuild",
+        "title": "Abort Build",
+        "category": "Jenkins",
+        "icon": "$(debug-stop)"
+      },
+      {
+        "command": "pipelineViewerForJenkins.openInBrowser",
+        "title": "Open in Browser",
+        "category": "Jenkins",
+        "icon": "$(link-external)"
+      },
+      {
+        "command": "pipelineViewerForJenkins.openLog",
+        "title": "Show Console Log",
+        "category": "Jenkins",
+        "icon": "$(output)"
+      },
+      {
+        "command": "pipelineViewerForJenkins.reloadLog",
+        "title": "Reload Console Log",
+        "category": "Jenkins",
+        "icon": "$(refresh)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "pipelineViewerForJenkins.refresh",
+          "when": "view == pipelineViewerForJenkins.jobs",
+          "group": "navigation@1"
+        },
+        {
+          "command": "pipelineViewerForJenkins.configure",
+          "when": "view == pipelineViewerForJenkins.jobs",
+          "group": "navigation@2"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "pipelineViewerForJenkins.build",
+          "when": "view == pipelineViewerForJenkins.jobs && viewItem == job",
+          "group": "inline@1"
+        },
+        {
+          "command": "pipelineViewerForJenkins.stopBuild",
+          "when": "view == pipelineViewerForJenkins.jobs && viewItem == build.running",
+          "group": "inline@1"
+        },
+        {
+          "command": "pipelineViewerForJenkins.openInBrowser",
+          "when": "view == pipelineViewerForJenkins.jobs && viewItem =~ /^(folder|job|build)/",
+          "group": "inline@2"
+        },
+        {
+          "command": "pipelineViewerForJenkins.build",
+          "when": "view == pipelineViewerForJenkins.jobs && viewItem == job",
+          "group": "1_actions@1"
+        },
+        {
+          "command": "pipelineViewerForJenkins.openLog",
+          "when": "view == pipelineViewerForJenkins.jobs && viewItem =~ /^(job|build)/",
+          "group": "1_actions@2"
+        },
+        {
+          "command": "pipelineViewerForJenkins.stopBuild",
+          "when": "view == pipelineViewerForJenkins.jobs && viewItem == build.running",
+          "group": "1_actions@3"
+        },
+        {
+          "command": "pipelineViewerForJenkins.openInBrowser",
+          "when": "view == pipelineViewerForJenkins.jobs && viewItem =~ /^(folder|job|build)/",
+          "group": "2_navigation@1"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "pipelineViewerForJenkins.reloadLog",
+          "when": "resourceScheme == pipeline-viewer-log",
+          "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "pipelineViewerForJenkins.build",
+          "when": "false"
+        },
+        {
+          "command": "pipelineViewerForJenkins.stopBuild",
+          "when": "false"
+        },
+        {
+          "command": "pipelineViewerForJenkins.openInBrowser",
+          "when": "false"
+        },
+        {
+          "command": "pipelineViewerForJenkins.openLog",
+          "when": "false"
+        },
+        {
+          "command": "pipelineViewerForJenkins.reloadLog",
+          "when": "resourceScheme == pipeline-viewer-log"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Pipeline Viewer for Jenkins",
+      "properties": {
+        "pipelineViewerForJenkins.url": {
+          "type": "string",
+          "default": "",
+          "scope": "application",
+          "markdownDescription": "Base URL of the Jenkins server, e.g. `https://jenkins.example.com/`. Only read from user settings, so a workspace cannot point the extension at another server."
+        },
+        "pipelineViewerForJenkins.username": {
+          "type": "string",
+          "default": "",
+          "scope": "application",
+          "description": "Jenkins username. The API token is kept in VS Code's secret storage; set it with 'Jenkins: Configure Connection'."
+        },
+        "pipelineViewerForJenkins.refreshInterval": {
+          "type": "number",
+          "default": 30,
+          "minimum": 5,
+          "maximum": 86400,
+          "description": "How often to poll Jenkins for job status, in seconds."
+        },
+        "pipelineViewerForJenkins.buildHistoryLimit": {
+          "type": "number",
+          "default": 10,
+          "minimum": 1,
+          "maximum": 100,
+          "description": "Number of recent builds to list under each job."
+        },
+        "pipelineViewerForJenkins.notifications": {
+          "type": "string",
+          "enum": [
+            "failures",
+            "all",
+            "off"
+          ],
+          "enumDescriptions": [
+            "Notify when a build fails or is unstable.",
+            "Notify whenever a build finishes.",
+            "Never notify."
+          ],
+          "default": "failures",
+          "description": "When to show a notification for finished builds."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "test": "npm run compile && node --test \"out/test/**/*.test.js\"",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.0",
+    "@types/vscode": "~1.85.0",
+    "@vscode/vsce": "^4.1.0",
+    "typescript": "^5.6.0"
+  },
+  "overrides": {
+    "@azure/msal-node": "^7.1.2"
+  }
+}

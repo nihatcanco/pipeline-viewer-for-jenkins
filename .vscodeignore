@@ -1,0 +1,13 @@
+.github/**
+.vscode/**
+src/**
+out/test/**
+**/*.map
+**/*.ts
+media/icon.svg
+media/screenshot.png
+tsconfig.json
+.gitignore
+node_modules/**
+*.vsix
+SECURITY.md
