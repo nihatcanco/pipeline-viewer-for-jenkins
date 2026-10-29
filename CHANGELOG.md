@@ -1,9 +1,5 @@
 # Changelog
 
-## Unreleased
-
-- Build Now on a parameterized job lets you review and change its parameters before the build starts.
-
 ## 0.1.0
 
 First public release.
@@ -13,4 +9,5 @@ First public release.
 - Notifications for finished builds.
 - Console logs in an editor tab, with reload for running builds.
 - Build Now, Abort Build and Open in Browser actions.
+- Build Now on a parameterized job lets you review and change its parameters before the build starts.
 - Clear guidance when the Jenkins server's certificate is not trusted, such as a self-signed certificate.
