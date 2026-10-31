@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { afterEach, test } from 'node:test';
-import { JenkinsClient, JenkinsError, displayName } from '../jenkinsClient';
+import { JenkinsClient, JenkinsError, countJobs, displayName } from '../jenkinsClient';
 
 const BASE = 'https://ci.example.com/jenkins/';
 const realFetch = globalThis.fetch;
@@ -120,4 +120,10 @@ test('displayName decodes branch names and tolerates a literal %', () => {
   assert.equal(displayName({ _class: '', url: '', name: 'feature%2Flogin' }), 'feature/login');
   assert.equal(displayName({ _class: '', url: '', name: '100% done' }), '100% done');
   assert.equal(displayName({ _class: '', url: '', name: 'x', displayName: 'Shown' }), 'Shown');
+});
+
+test('countJobs counts jobs inside folders but not the folders themselves', () => {
+  const job = (name: string) => ({ _class: 'hudson.model.FreeStyleProject', name, url: `job/${name}/` });
+  const folder = { _class: 'com.cloudbees.hudson.plugins.folder.Folder', name: 'f', url: 'job/f/', jobs: [job('b'), job('c')] };
+  assert.equal(countJobs([job('a'), folder, { ...folder, jobs: [] }]), 3);
 });

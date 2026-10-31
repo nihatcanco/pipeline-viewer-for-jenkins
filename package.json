@@ -81,6 +81,12 @@
         "icon": "$(gear)"
       },
       {
+        "command": "pipelineViewerForJenkins.openSettings",
+        "title": "Open Settings",
+        "category": "Jenkins",
+        "icon": "$(settings-gear)"
+      },
+      {
         "command": "pipelineViewerForJenkins.refresh",
         "title": "Refresh",
         "category": "Jenkins",
@@ -125,7 +131,7 @@
           "group": "navigation@1"
         },
         {
-          "command": "pipelineViewerForJenkins.configure",
+          "command": "pipelineViewerForJenkins.openSettings",
           "when": "view == pipelineViewerForJenkins.jobs",
           "group": "navigation@2"
         }

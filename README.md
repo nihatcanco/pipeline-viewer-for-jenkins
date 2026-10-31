@@ -29,6 +29,8 @@ Leave the username empty to connect anonymously, if your Jenkins allows read acc
 
 ## Settings
 
+Open the settings page with the gear button in the Pipelines view title, or with **Jenkins: Open Settings** from the Command Palette. It edits the connection (including the API token) and the preferences below. They are regular VS Code settings, so they can also be changed in the Settings editor or `settings.json`.
+
 | Setting | Default | Description |
 | --- | --- | --- |
 | `pipelineViewerForJenkins.url` | | Base URL of the Jenkins server (user settings only) |

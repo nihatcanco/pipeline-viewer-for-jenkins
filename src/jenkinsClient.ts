@@ -6,7 +6,7 @@ export interface JenkinsJob {
   displayName?: string;
   url: string;
   color?: string;
-  lastCompletedBuild?: { number: number; result: string | null } | null;
+  lastCompletedBuild?: { number: number; result: string | null; timestamp?: number; duration?: number } | null;
   /** Present on folders and multibranch projects. */
   jobs?: JenkinsJob[];
 }
@@ -44,7 +44,7 @@ export class JenkinsError extends Error {
   }
 }
 
-const JOB_FIELDS = 'name,displayName,url,color,_class,lastCompletedBuild[number,result]';
+const JOB_FIELDS = 'name,displayName,url,color,_class,lastCompletedBuild[number,result,timestamp,duration]';
 // Three levels covers root → folder/multibranch → branch; deeper folders are fetched when expanded.
 const JOBS_TREE = `jobs[${JOB_FIELDS},jobs[${JOB_FIELDS},jobs[${JOB_FIELDS}]]]`;
 const BUILD_FIELDS = 'number,url,result,building,timestamp,duration,estimatedDuration';
@@ -87,6 +87,11 @@ function connectionError(err: unknown): string {
 
 export function isFolder(job: JenkinsJob): boolean {
   return job.jobs !== undefined || /Folder|MultiBranchProject/.test(job._class);
+}
+
+/** Number of jobs, not counting folders, in an already fetched tree. */
+export function countJobs(jobs: JenkinsJob[]): number {
+  return jobs.reduce((sum, job) => sum + (isFolder(job) ? countJobs(job.jobs ?? []) : 1), 0);
 }
 
 export function isPipeline(job: JenkinsJob): boolean {

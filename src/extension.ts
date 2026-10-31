@@ -1,47 +1,12 @@
 import * as vscode from 'vscode';
 import { JenkinsClient, JenkinsJob, displayName, isFolder } from './jenkinsClient';
+import { originOf, saveConnection, storedToken } from './connection';
 import { JobsProvider, Node, errorMessage } from './jobsProvider';
 import { LOG_SCHEME, LogProvider } from './logProvider';
 import { needsBrowser, promptForParameters } from './parameters';
 import { SECTION, numberSetting, settings } from './settings';
+import { SettingsPage } from './settingsPage';
 import { Status, statusFromColor, statusFromResult, statusLabel } from './status';
-
-const CREDENTIALS_KEY = 'credentials';
-
-/** The API token is stored with the server and user it was entered for, and is never sent anywhere else. */
-interface Credentials {
-  origin: string;
-  username: string;
-  token: string;
-}
-
-function originOf(url: string): string | undefined {
-  try {
-    const parsed = new URL(url);
-    return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? parsed.origin : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-async function storedToken(secrets: vscode.SecretStorage, url: string, username: string): Promise<string | undefined> {
-  const origin = originOf(url);
-  try {
-    const saved = JSON.parse((await secrets.get(CREDENTIALS_KEY)) ?? 'null') as Credentials | null;
-    if (origin && saved?.origin === origin && saved.username === username) {
-      return saved.token;
-    }
-  } catch {
-    // An unreadable entry is treated as no token.
-  }
-  return undefined;
-}
-
-/** Basic auth over plain http exposes the token to anyone on the network path, unless the server is this machine. */
-function sendsTokenInClear(url: string): boolean {
-  const parsed = new URL(url);
-  return parsed.protocol === 'http:' && !['localhost', '127.0.0.1', '[::1]'].includes(parsed.hostname);
-}
 
 interface TrackedJob {
   fullName: string;
@@ -265,40 +230,9 @@ async function configure(controller: Controller, secrets: vscode.SecretStorage):
     token = entered.trim() || saved || '';
   }
 
-  if (token && sendsTokenInClear(url.trim())) {
-    const choice = await vscode.window.showWarningMessage(
-      'This Jenkins URL uses http://, so your API token would be sent unencrypted. Use https:// if the server supports it.',
-      { modal: true },
-      'Use http:// Anyway',
-    );
-    if (choice !== 'Use http:// Anyway') {
-      return;
-    }
+  if (await saveConnection(secrets, url.trim(), username.trim(), token)) {
+    await controller.reconnect();
   }
-
-  const testClient = new JenkinsClient(url.trim(), username.trim(), token);
-  try {
-    const jobs = await vscode.window.withProgress(
-      { location: vscode.ProgressLocation.Notification, title: 'Connecting to Jenkins…' },
-      () => testClient.getJobs(),
-    );
-    void vscode.window.showInformationMessage(`Connected to Jenkins: found ${flatten(jobs).length} jobs.`);
-  } catch (err) {
-    const choice = await vscode.window.showErrorMessage(`Jenkins connection failed: ${errorMessage(err)}`, 'Save Anyway');
-    if (choice !== 'Save Anyway') {
-      return;
-    }
-  }
-
-  if (token) {
-    const credentials: Credentials = { origin: originOf(url.trim())!, username: username.trim(), token };
-    await secrets.store(CREDENTIALS_KEY, JSON.stringify(credentials));
-  } else {
-    await secrets.delete(CREDENTIALS_KEY);
-  }
-  await config.update('url', url.trim(), vscode.ConfigurationTarget.Global);
-  await config.update('username', username.trim(), vscode.ConfigurationTarget.Global);
-  await controller.reconnect();
 }
 
 export function activate(context: vscode.ExtensionContext): void {
@@ -323,6 +257,9 @@ export function activate(context: vscode.ExtensionContext): void {
 
     vscode.commands.registerCommand('pipelineViewerForJenkins.configure', () => configure(controller, context.secrets)),
     vscode.commands.registerCommand('pipelineViewerForJenkins.refresh', () => controller.refresh()),
+    vscode.commands.registerCommand('pipelineViewerForJenkins.openSettings', () =>
+      SettingsPage.show(context.secrets, () => controller.reconnect()),
+    ),
 
     vscode.commands.registerCommand('pipelineViewerForJenkins.build', async (node: Node) => {
       const client = requireClient();

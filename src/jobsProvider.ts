@@ -79,6 +79,12 @@ export class JobsProvider implements vscode.TreeDataProvider<Node> {
         item.description = statusLabel(status);
         item.contextValue = status === 'disabled' ? 'job.disabled' : 'job';
         item.tooltip = node.job.url;
+        const last = node.job.lastCompletedBuild;
+        if (last?.timestamp) {
+          const finished = last.timestamp + (last.duration ?? 0);
+          item.description += ` · ${timeAgo(finished)}`;
+          item.tooltip += `\nLast completed #${last.number} finished ${new Date(finished).toLocaleString()}`;
+        }
         return item;
       }
       case 'build': {
