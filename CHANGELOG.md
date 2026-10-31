@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.0
 
 - Jobs show when their last completed build finished.
 - A settings page for the connection, refresh interval, build history and notifications, opened from the gear in the Pipelines view.
