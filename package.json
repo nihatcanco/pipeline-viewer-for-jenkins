@@ -2,7 +2,7 @@
   "name": "pipeline-viewer-for-jenkins",
   "displayName": "Pipeline Viewer for Jenkins",
   "description": "Browse Jenkins jobs, builds, pipeline stages and console logs from the VS Code sidebar.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "nihatcanco",
   "author": "Nihatcan Colpan",
   "license": "MIT",
