@@ -38,6 +38,30 @@ export interface JenkinsParameter {
   choices?: string[];
 }
 
+export type ParameterKind = 'boolean' | 'choice' | 'password' | 'file' | 'string';
+
+export function parameterKind(param: JenkinsParameter): ParameterKind {
+  const type = param.type ?? '';
+  if (/Boolean/.test(type)) {
+    return 'boolean';
+  }
+  if (param.choices) {
+    return 'choice';
+  }
+  if (/Password/.test(type)) {
+    return 'password';
+  }
+  if (/File/.test(type)) {
+    return 'file';
+  }
+  return 'string';
+}
+
+/** File parameters need a multipart upload, which only the Jenkins web page offers. */
+export function needsBrowser(params: JenkinsParameter[]): boolean {
+  return params.some((param) => parameterKind(param) === 'file');
+}
+
 export class JenkinsError extends Error {
   constructor(message: string, readonly status?: number) {
     super(message);
@@ -83,6 +107,11 @@ function connectionError(err: unknown): string {
     );
   }
   return cause?.message ?? (err as Error).message;
+}
+
+/** Strips ANSI colour codes emitted by the AnsiColor plugin and most build tools. */
+export function stripAnsi(text: string): string {
+  return text.replace(/\x1b\[[0-9;]*[A-Za-z]/g, '');
 }
 
 export function isFolder(job: JenkinsJob): boolean {
@@ -157,6 +186,10 @@ export class JenkinsClient {
       this.endpoint(jobUrl, `api/json?tree=builds[${BUILD_FIELDS}]{0,${limit}}`),
     );
     return data.builds ?? [];
+  }
+
+  async getBuild(buildUrl: string): Promise<JenkinsBuild> {
+    return this.json<JenkinsBuild>(this.endpoint(buildUrl, `api/json?tree=${BUILD_FIELDS}`));
   }
 
   /** Stage data from the Pipeline Stage View plugin; undefined when the plugin or the data is missing. */

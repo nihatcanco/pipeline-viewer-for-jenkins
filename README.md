@@ -15,6 +15,7 @@ Browse Jenkins® jobs, builds, pipeline stages and console logs from the VS Code
 - **Notifications** when a build finishes (failures only by default).
 - **Console logs** open in an editor tab, scrolled to the end. Use the refresh button in the editor title to reload a running build's log.
 - **Actions** on jobs and builds: Build Now, Abort Build, Open in Browser.
+- **AI agent access** through a local MCP server, so agents such as Claude Code can check builds and read logs for you.
 
 ## Installation
 
@@ -27,9 +28,32 @@ Install from the [Visual Studio Marketplace](https://marketplace.visualstudio.co
 
 Leave the username empty to connect anonymously, if your Jenkins allows read access without logging in.
 
+## Using it from AI agents
+
+The extension can run a local [MCP](https://modelcontextprotocol.io) server, so AI agents such as Claude Code, Cursor or GitHub Copilot can look at Jenkins for you. They can list jobs, check builds and stages, and read console logs to find out why a build failed. They can also ask to start or abort a build, which you approve in VS Code each time.
+
+1. Open the settings page and turn on **Allow AI agents to use Jenkins** under **AI Agent Access (MCP)**, or run **Jenkins: Set Up AI Agent Access (MCP)** from the Command Palette and choose **Turn On**.
+2. Copy the setup for your agent:
+   - **Claude Code:** a `claude mcp add …` command. Run it in a terminal.
+   - **Other MCP clients:** a JSON entry for the client's MCP configuration file.
+
+The copied setup contains an access token, so keep it out of repositories. The settings page also shows whether the server is running, changes its port, resets the access token and explains how agent access works.
+
+| Tool | What it does |
+| --- | --- |
+| `list_jobs` | Jobs with their status and last completed build, folders expanded |
+| `get_builds` | Recent builds of a job |
+| `get_build` | Status and timing of one build, with its pipeline stages |
+| `get_job_parameters` | Build parameters a job declares |
+| `get_console_log` | A page of a build's console output, the end by default |
+| `start_build` | Starts a build, with parameters, after you approve it |
+| `abort_build` | Aborts a running build after you approve it |
+
+The server runs while VS Code is open. With several windows open, one of them serves agents and shows the approvals. With remote development (SSH, WSL or containers), the server runs on the remote machine, so run the agent there as well.
+
 ## Settings
 
-Open the settings page with the gear button in the Pipelines view title, or with **Jenkins: Open Settings** from the Command Palette. It edits the connection (including the API token) and the preferences below. They are regular VS Code settings, so they can also be changed in the Settings editor or `settings.json`.
+Open the settings page with the gear button in the Pipelines view title, or with **Jenkins: Open Settings** from the Command Palette. It edits the connection (including the API token), the preferences and AI agent access below. They are regular VS Code settings, so they can also be changed in the Settings editor or `settings.json`.
 
 | Setting | Default | Description |
 | --- | --- | --- |
@@ -38,6 +62,8 @@ Open the settings page with the gear button in the Pipelines view title, or with
 | `pipelineViewerForJenkins.refreshInterval` | `30` | Polling interval in seconds (5 to 86400) |
 | `pipelineViewerForJenkins.buildHistoryLimit` | `10` | Builds listed under each job (1 to 100) |
 | `pipelineViewerForJenkins.notifications` | `failures` | `failures`, `all` or `off` |
+| `pipelineViewerForJenkins.mcp.enabled` | `false` | Run the MCP server for AI agents (user settings only) |
+| `pipelineViewerForJenkins.mcp.port` | `47632` | Port of the MCP server on 127.0.0.1 (user settings only) |
 
 ## Requirements
 
@@ -50,6 +76,7 @@ Open the settings page with the gear button in the Pipelines view title, or with
 - Your API token is kept in VS Code's secret storage (the OS keychain), never in a settings file. It is stored together with the server and username it was entered for, and is only ever sent to that server.
 - The server URL and username can only be set in your user settings. A repository you open cannot point the extension at another server through its `.vscode/settings.json`.
 - Every request is pinned to the configured server, even when Jenkins reports links under another host name, and redirects are never followed, so your credentials cannot be forwarded elsewhere.
+- The MCP server for AI agents is off until you turn it on, and only your user settings can turn it on. It listens on 127.0.0.1 only, requires a random access token kept in secret storage (reset it with **Jenkins: Reset AI Agent Access Token**), and refuses requests from web pages. Every build an agent starts or aborts waits for your approval. What an agent reads, such as console logs, is sent to its AI provider.
 - Use `https://` where you can. Jenkins API tokens travel in a Basic auth header, so the extension asks for confirmation before using a token with a plain `http://` server.
 
 To report a vulnerability, see [SECURITY.md](SECURITY.md).

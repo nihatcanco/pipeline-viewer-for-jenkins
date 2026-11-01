@@ -1,9 +1,10 @@
 import * as vscode from 'vscode';
-import { JenkinsClient, JenkinsJob, displayName, isFolder } from './jenkinsClient';
+import { AgentAccess } from './agentAccess';
+import { JenkinsClient, JenkinsJob, displayName, isFolder, needsBrowser } from './jenkinsClient';
 import { originOf, saveConnection, storedToken } from './connection';
 import { JobsProvider, Node, errorMessage } from './jobsProvider';
 import { LOG_SCHEME, LogProvider } from './logProvider';
-import { needsBrowser, promptForParameters } from './parameters';
+import { promptForParameters } from './parameters';
 import { SECTION, numberSetting, settings } from './settings';
 import { SettingsPage } from './settingsPage';
 import { Status, statusFromColor, statusFromResult, statusLabel } from './status';
@@ -238,6 +239,13 @@ async function configure(controller: Controller, secrets: vscode.SecretStorage):
 export function activate(context: vscode.ExtensionContext): void {
   const controller = new Controller(context.secrets);
   logs = new LogProvider(() => controller.client);
+  const agents = new AgentAccess(
+    context.secrets,
+    () => controller.client,
+    // Give Jenkins a moment to act on the request before refreshing.
+    () => setTimeout(() => void controller.refresh(), 3000),
+    String(context.extension.packageJSON.version),
+  );
 
   const requireClient = (): JenkinsClient | undefined => {
     if (!controller.client) {
@@ -252,14 +260,18 @@ export function activate(context: vscode.ExtensionContext): void {
 
   context.subscriptions.push(
     controller,
+    agents,
     vscode.window.createTreeView(`${SECTION}.jobs`, { treeDataProvider: controller.provider, showCollapseAll: true }),
     vscode.workspace.registerTextDocumentContentProvider(LOG_SCHEME, logs),
 
     vscode.commands.registerCommand('pipelineViewerForJenkins.configure', () => configure(controller, context.secrets)),
     vscode.commands.registerCommand('pipelineViewerForJenkins.refresh', () => controller.refresh()),
     vscode.commands.registerCommand('pipelineViewerForJenkins.openSettings', () =>
-      SettingsPage.show(context.secrets, () => controller.reconnect()),
+      SettingsPage.show(context.secrets, () => controller.reconnect(), agents),
     ),
+
+    vscode.commands.registerCommand('pipelineViewerForJenkins.setUpAgentAccess', () => agents.setUp()),
+    vscode.commands.registerCommand('pipelineViewerForJenkins.resetAgentToken', () => agents.resetToken()),
 
     vscode.commands.registerCommand('pipelineViewerForJenkins.build', async (node: Node) => {
       const client = requireClient();
@@ -357,6 +369,7 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   void controller.reconnect();
+  agents.update();
 }
 
 export function deactivate(): void {}

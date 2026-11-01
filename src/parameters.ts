@@ -1,29 +1,5 @@
 import * as vscode from 'vscode';
-import { JenkinsParameter } from './jenkinsClient';
-
-type Kind = 'boolean' | 'choice' | 'password' | 'file' | 'string';
-
-function kindOf(param: JenkinsParameter): Kind {
-  const type = param.type ?? '';
-  if (/Boolean/.test(type)) {
-    return 'boolean';
-  }
-  if (param.choices) {
-    return 'choice';
-  }
-  if (/Password/.test(type)) {
-    return 'password';
-  }
-  if (/File/.test(type)) {
-    return 'file';
-  }
-  return 'string';
-}
-
-/** File parameters need a multipart upload, which only the Jenkins web page offers. */
-export function needsBrowser(params: JenkinsParameter[]): boolean {
-  return params.some((param) => kindOf(param) === 'file');
-}
+import { JenkinsParameter, parameterKind } from './jenkinsClient';
 
 function defaultValue(param: JenkinsParameter): string {
   const value = param.defaultParameterValue?.value;
@@ -60,7 +36,7 @@ export async function promptForParameters(
       { label: 'Parameters', kind: vscode.QuickPickItemKind.Separator },
       ...params.map((param) => {
         const edited = changed.has(param.name);
-        const value = kindOf(param) === 'password' ? (edited ? '••••••' : '(default)') : (changed.get(param.name) ?? defaultValue(param));
+        const value = parameterKind(param) === 'password' ? (edited ? '••••••' : '(default)') : (changed.get(param.name) ?? defaultValue(param));
         return {
           label: param.name,
           description: edited ? `${value}  (changed)` : value,
@@ -90,10 +66,10 @@ export async function promptForParameters(
 async function editValue(param: JenkinsParameter, current: string): Promise<string | undefined> {
   const title = param.name;
   const prompt = plainText(param.description);
-  switch (kindOf(param)) {
+  switch (parameterKind(param)) {
     case 'boolean':
     case 'choice': {
-      const options = kindOf(param) === 'boolean' ? ['true', 'false'] : param.choices ?? [];
+      const options = parameterKind(param) === 'boolean' ? ['true', 'false'] : param.choices ?? [];
       const items = options.map((label) => ({ label, picked: label === current, description: label === current ? 'current' : undefined }));
       return (await vscode.window.showQuickPick(items, { title, placeHolder: prompt, ignoreFocusOut: true }))?.label;
     }

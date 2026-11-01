@@ -1,5 +1,3 @@
-import * as vscode from 'vscode';
-
 export type Status = 'success' | 'failure' | 'unstable' | 'aborted' | 'running' | 'paused' | 'notbuilt' | 'disabled';
 
 /** Job "color" from the Jenkins API; `_anime` means a build is in progress. */
@@ -61,27 +59,6 @@ export function statusFromStage(status: string): Status {
       return 'paused';
     default:
       return 'notbuilt';
-  }
-}
-
-export function statusIcon(status: Status): vscode.ThemeIcon {
-  switch (status) {
-    case 'success':
-      return new vscode.ThemeIcon('pass-filled', new vscode.ThemeColor('testing.iconPassed'));
-    case 'failure':
-      return new vscode.ThemeIcon('error', new vscode.ThemeColor('testing.iconFailed'));
-    case 'unstable':
-      return new vscode.ThemeIcon('warning', new vscode.ThemeColor('list.warningForeground'));
-    case 'aborted':
-      return new vscode.ThemeIcon('circle-slash', new vscode.ThemeColor('disabledForeground'));
-    case 'running':
-      return new vscode.ThemeIcon('sync~spin', new vscode.ThemeColor('charts.blue'));
-    case 'paused':
-      return new vscode.ThemeIcon('debug-pause', new vscode.ThemeColor('charts.yellow'));
-    case 'disabled':
-      return new vscode.ThemeIcon('circle-large-outline', new vscode.ThemeColor('disabledForeground'));
-    case 'notbuilt':
-      return new vscode.ThemeIcon('circle-outline', new vscode.ThemeColor('disabledForeground'));
   }
 }
 

@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { JenkinsClient } from './jenkinsClient';
+import { JenkinsClient, stripAnsi } from './jenkinsClient';
 import { errorMessage } from './jobsProvider';
 
 export const LOG_SCHEME = 'pipeline-viewer-log';
@@ -21,8 +21,7 @@ export class LogProvider implements vscode.TextDocumentContentProvider {
       return 'Jenkins is not configured. Run "Jenkins: Configure Connection".';
     }
     try {
-      // Strip ANSI colour codes emitted by the AnsiColor plugin and most build tools.
-      return (await client.getConsoleText(uri.query)).replace(/\x1b\[[0-9;]*[A-Za-z]/g, '');
+      return stripAnsi(await client.getConsoleText(uri.query));
     } catch (err) {
       return `Could not load the console log: ${errorMessage(err)}`;
     }

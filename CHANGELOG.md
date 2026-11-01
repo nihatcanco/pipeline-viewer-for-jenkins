@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- AI agents such as Claude Code can use Jenkins through a local MCP server. They can list jobs and read builds, stages and console logs, and start or abort builds after you approve them in VS Code. It is off by default; turn it on from the settings page or with **Jenkins: Set Up AI Agent Access (MCP)**.
+
 ## 0.2.0
 
 - Jobs show when their last completed build finished.

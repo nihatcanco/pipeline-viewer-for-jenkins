@@ -9,7 +9,7 @@ import {
   isPipeline,
 } from './jenkinsClient';
 import { numberSetting } from './settings';
-import { formatDuration, statusFromColor, statusFromResult, statusFromStage, statusIcon, statusLabel, timeAgo } from './status';
+import { Status, formatDuration, statusFromColor, statusFromResult, statusFromStage, statusLabel, timeAgo } from './status';
 
 export type Node =
   | { kind: 'folder'; job: JenkinsJob }
@@ -20,6 +20,27 @@ export type Node =
 
 export function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
+}
+
+function statusIcon(status: Status): vscode.ThemeIcon {
+  switch (status) {
+    case 'success':
+      return new vscode.ThemeIcon('pass-filled', new vscode.ThemeColor('testing.iconPassed'));
+    case 'failure':
+      return new vscode.ThemeIcon('error', new vscode.ThemeColor('testing.iconFailed'));
+    case 'unstable':
+      return new vscode.ThemeIcon('warning', new vscode.ThemeColor('list.warningForeground'));
+    case 'aborted':
+      return new vscode.ThemeIcon('circle-slash', new vscode.ThemeColor('disabledForeground'));
+    case 'running':
+      return new vscode.ThemeIcon('sync~spin', new vscode.ThemeColor('charts.blue'));
+    case 'paused':
+      return new vscode.ThemeIcon('debug-pause', new vscode.ThemeColor('charts.yellow'));
+    case 'disabled':
+      return new vscode.ThemeIcon('circle-large-outline', new vscode.ThemeColor('disabledForeground'));
+    case 'notbuilt':
+      return new vscode.ThemeIcon('circle-outline', new vscode.ThemeColor('disabledForeground'));
+  }
 }
 
 function jobNode(job: JenkinsJob): Node {

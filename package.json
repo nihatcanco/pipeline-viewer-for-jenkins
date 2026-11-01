@@ -31,7 +31,9 @@
     "cd",
     "pipeline",
     "build",
-    "devops"
+    "devops",
+    "mcp",
+    "ai"
   ],
   "capabilities": {
     "untrustedWorkspaces": {
@@ -85,6 +87,16 @@
         "title": "Open Settings",
         "category": "Jenkins",
         "icon": "$(settings-gear)"
+      },
+      {
+        "command": "pipelineViewerForJenkins.setUpAgentAccess",
+        "title": "Set Up AI Agent Access (MCP)",
+        "category": "Jenkins"
+      },
+      {
+        "command": "pipelineViewerForJenkins.resetAgentToken",
+        "title": "Reset AI Agent Access Token",
+        "category": "Jenkins"
       },
       {
         "command": "pipelineViewerForJenkins.refresh",
@@ -246,6 +258,20 @@
           ],
           "default": "failures",
           "description": "When to show a notification for finished builds."
+        },
+        "pipelineViewerForJenkins.mcp.enabled": {
+          "type": "boolean",
+          "default": false,
+          "scope": "application",
+          "markdownDescription": "Run a local MCP server so AI agents such as Claude Code can read jobs, builds and console logs, and ask to start or abort builds, which you approve each time. Set it up on the settings page (**Jenkins: Open Settings**) or with **Jenkins: Set Up AI Agent Access (MCP)**. Only read from user settings."
+        },
+        "pipelineViewerForJenkins.mcp.port": {
+          "type": "number",
+          "default": 47632,
+          "minimum": 1024,
+          "maximum": 65535,
+          "scope": "application",
+          "description": "Port of the MCP server on 127.0.0.1. Agents that are already set up need the new port after a change."
         }
       }
     }
